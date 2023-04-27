@@ -1,0 +1,28 @@
+repos:
+- repo: https://github.com/antonbabenko/pre-commit-terraform
+  rev: v1.62.3
+  hooks:
+    - id: terraform_fmt
+      args:
+        - --args=-no-color
+        - --args=-diff
+        - --args=-write=true
+    - id: terraform_docs
+      args:
+        - --hook-config=--path-to-file=README.md     
+        - --hook-config=--add-to-existing-file=true
+        - --hook-config=--create-file-if-not-exist=true
+    - id: terraform_tflint
+      args:
+        - --args=--config=./.tflint.hcl
+    - id: checkov
+      args: [
+        "-d", ".",
+        "--skip-check", "CKV_AWS_144,CKV_AWS_18,CKV_AWS_8,CKV2_AWS_8,CKV_AWS_79,,CKV_AWS_108,CKV_AWS_111,CKV_AWS_49,CKV_AWS_107,CKV_AWS_109,CKV_AWS_1,CKV_AWS_110,CKV_AWS_40,CKV2_AWS_23,CKV2_AWS_5",
+      ]
+    - id: terrascan
+      args:
+        - --args=--verbose
+        - --args=--non-recursive # avoids scan errors on subdirectories without Terraform config files
+        - --args=--policy-type=aws
+        - --args=--config-path=terrascan.toml

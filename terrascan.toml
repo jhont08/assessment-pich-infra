@@ -1,0 +1,12 @@
+[rules]
+
+    skip-rules = [
+      "AC_AWS_0327", #SecurityGroup - Ensure Security Groups Unrestricted Specific Ports Knowninternalwebport
+      "AC_AWS_0339", #SecurityGroup - Ensure HadoopNameNode' (TCP,9000) is not exposed to private hosts more than 32
+      "AC_AWS_0475", #IAM - Ensure IAM policies are attached only to groups or roles
+      "AC_AWS_0479", #EC2 - EC2 instances should disable IMDS or require IMDSv2 as this can be related to the weaponization phase of kill chain
+      "AC_AWS_0459", #EC2 - Enable AWS EBS Snapshot Encryption
+      "AC_AWS_0497", #S3 - Ensure S3 buckets have access logging enabled.
+      "AC_AWS_0214", #S3 - Enabling S3 versioning will enable easy recovery from both unintended user actions, like deletes and overwrites
+      "AC_AWS_0207"  #S3 - Ensure that S3 Buckets have server side encryption at rest enabled with KMS key to protect sensitive data.
+    ]
