@@ -6,8 +6,8 @@ resource "aws_ecs_task_definition" "assessment_pich_app_task" {
   network_mode             = "awsvpc"
 
   // Valid sizes are shown here: https://aws.amazon.com/fargate/pricing/
-  memory = "2GB"
-  cpu    = "1024"
+  memory = "512"
+  cpu    = "256"
 
   // Fargate requires task definitions to have an execution role ARN to support ECR images
   execution_role_arn = aws_iam_role.assessment_pich_app_ecs_role.arn
@@ -16,8 +16,8 @@ resource "aws_ecs_task_definition" "assessment_pich_app_task" {
 [
     {
         "name": "assessment-pich-app-ecs-task",
-        "image": "984540782578.dkr.ecr.us-east-1.amazonaws.com/ecr-app-repo:0.0.1",
-        "memory": 1024,
+        "image": "984540782578.dkr.ecr.us-east-1.amazonaws.com/assessment-pich-app-ecr:0.0.1",
+        "memory": 512,
         "essential": true,
         "portMappings": [
             {

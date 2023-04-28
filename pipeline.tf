@@ -1,15 +1,15 @@
+resource "aws_codestarconnections_connection" "github" {
+  name          = "github-connection"
+  provider_type = "GitHub"
+}
+
 resource "aws_codepipeline" "codepipeline" {
-  name     = "tf-test-pipeline"
-  role_arn = aws_iam_role.codepipeline_role.arn
+  name     = "assessment-pich-app-pipeline"
+  role_arn = aws_iam_role.assessment_pich_app_codepipeline_role.arn
 
   artifact_store {
     location = "jftriana-artifacts"
     type     = "S3"
-
-    encryption_key {
-      id   = data.aws_kms_alias.s3kmskey.arn
-      type = "KMS"
-    }
   }
 
   stage {
@@ -44,98 +44,59 @@ resource "aws_codepipeline" "codepipeline" {
       version          = "1"
 
       configuration = {
-        ProjectName = "test"
-      }
-    }
-  }
-
-  stage {
-    name = "Deploy"
-
-    action {
-      name            = "Deploy"
-      category        = "Deploy"
-      owner           = "AWS"
-      provider        = "CloudFormation"
-      input_artifacts = ["build_output"]
-      version         = "1"
-
-      configuration = {
-        ActionMode     = "REPLACE_ON_FAILURE"
-        Capabilities   = "CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM"
-        OutputFileName = "CreateStackOutput.json"
-        StackName      = "MyStack"
-        TemplatePath   = "build_output::sam-templated.yaml"
+        ProjectName = aws_codebuild_project.assessment_pich_app_project.name
       }
     }
   }
 }
 
-resource "aws_codestarconnections_connection" "github" {
-  name          = "github-connection"
-  provider_type = "GitHub"
-}
+resource "aws_codebuild_project" "assessment_pich_app_project" {
+  name          = "assessment-pich-app-project"
+  description   = "Build and Deploy Assessment App"
+  service_role  = aws_iam_role.assessment_pich_app_codebuild_role.arn
+  build_timeout = "5"
 
-data "aws_iam_policy_document" "assume_role" {
-  statement {
-    effect = "Allow"
+  artifacts {
+    type = "CODEPIPELINE"
+  }
 
-    principals {
-      type        = "Service"
-      identifiers = ["codepipeline.amazonaws.com"]
+  environment {
+    compute_type    = "BUILD_GENERAL1_SMALL"
+    image           = "aws/codebuild/standard:2.0"
+    type            = "LINUX_CONTAINER"
+    privileged_mode = true
+    environment_variable {
+      name  = "AWS_ACCOUNT_ID"
+      value = data.aws_caller_identity.current.account_id
     }
-
-    actions = ["sts:AssumeRole"]
-  }
-}
-
-resource "aws_iam_role" "codepipeline_role" {
-  name               = "test-role"
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
-}
-
-data "aws_iam_policy_document" "codepipeline_policy" {
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "s3:GetObject",
-      "s3:GetObjectVersion",
-      "s3:GetBucketVersioning",
-      "s3:PutObjectAcl",
-      "s3:PutObject",
-    ]
-
-    resources = [
-      "jftriana-artifacts",
-      "jftriana-artifacts/*"
-    ]
+    environment_variable {
+      name  = "AWS_DEFAULT_REGION"
+      value = var.aws_region
+    }
+    environment_variable {
+      name  = "IMAGE_REPO_NAME"
+      value = "assessment-pich-app-ecr"
+    }
+    environment_variable {
+      name  = "IMAGE_TAG"
+      value = "0.0.1"
+    }
+    environment_variable {
+      name  = "ECS_CLUSTER_NAME"
+      value = aws_ecs_cluster.assessment_pich_app_cluster.name
+    }
+    environment_variable {
+      name  = "ECS_SERVICE_NAME"
+      value = aws_ecs_service.assessment_pich_app_ecs_service.name
+    }
+    environment_variable {
+      name  = "ECS_TASK_DEFINITION"
+      value = aws_ecs_task_definition.assessment_pich_app_task.family
+    }
   }
 
-  statement {
-    effect    = "Allow"
-    actions   = ["codestar-connections:UseConnection"]
-    resources = [aws_codestarconnections_connection.example.arn]
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = "arn:aws:s3:::jftriana-artifacts/assessment-pich-app-buildspecs/buildspec.yml"
   }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "codebuild:BatchGetBuilds",
-      "codebuild:StartBuild",
-    ]
-
-    resources = ["*"]
-  }
-}
-
-resource "aws_iam_role_policy" "codepipeline_policy" {
-  name   = "codepipeline_policy"
-  role   = aws_iam_role.codepipeline_role.id
-  policy = data.aws_iam_policy_document.codepipeline_policy.json
-}
-
-data "aws_kms_alias" "s3kmskey" {
-  name = "alias/myKmsKey"
 }

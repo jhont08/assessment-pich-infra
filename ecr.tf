@@ -1,6 +1,6 @@
-resource "aws_ecr_repository" "ecr_repo" {
-  name = "ecr-app-repo"
+resource "aws_ecr_repository" "assessment_pich_app_ecr" {
+  name = "assessment-pich-app-ecr"
   tags = {
-    Name = "ecr-app-repo"
+    Name = "assessment-pich-app-ecr"
   }
 }
